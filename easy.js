@@ -41,7 +41,7 @@
 
     function extract_parameters (arrow_function) {
         let code = arrow_function.toString()
-        let match = code.match(/\(?([^)]*)\)?=>/)
+        let match = code.match(/^\(?([^)>]*)\)?=>/)
         assert(match != null)
         return match[1].split(',').map(p => p.trim())
     }
@@ -280,6 +280,14 @@
             copy.unshift(element)
             return copy
         }
+        removed (index) {
+            assert(this.is('Array'))
+            assert(Number.isInteger(index))
+            assert(0 <= index && index < this.operand.length)
+            let copy = this.copy()
+            copy.splice(index, 1)
+            return copy
+        }
         equals (another) {
             assert(this.is('Array') || this.is('HashTable'))
             if (this.is('Array')) {
@@ -305,6 +313,9 @@
     }
 
     let static_tools = {
+        assert (value) {
+            return assert(value)
+        },
         concat (...args) {
             args.forEach(arg => require_type(arg, 'Iterable'))
             let iterators = args.map(arg => arg[Symbol.iterator]())
@@ -355,7 +366,8 @@
                 require_type(tag, 'String')
                 require_type(props, 'HashTable')
                 children = children || []
-                require_type(children, 'Array')
+                assert(check_type(children, 'Array')
+                       || check_type(children, 'Function'))
                 let e = document.createElement(tag)
                 function set_prop (name, value) {
                     if (name == 'class') {
@@ -378,8 +390,8 @@
                     } else if (name == 'on') {
                         require_type(value, 'HashTable')
                         for (let name of Object.keys(value)) {
-                            let handler = value[name]
-                            require_type(handler, 'Function')
+                            require_type(value[name], 'Function')
+                            let handler = ev => value[name](ev, data)
                             e[`on${name}`] = handler
                         }
                     } else if (name == 'text') {
