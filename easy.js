@@ -8,7 +8,6 @@
     const DataBinding = Symbol('DataBinding')
     const Storage = Symbol('Storage')
     const Watchers = Symbol('Watchers')
-    const Element = Symbol('Element')
 
     
     function assert (value) {
@@ -57,13 +56,13 @@
         }
     }
 
-    function set_prop (e, name, value) {
+    function set_prop (e, refs, name, value) {
         if (name == 'class') {
             require_type(value, 'Array')
             e.className = value.join(' ')
         } else if (name == 'style') {
             require_type(value, 'HashTable')
-            let t = operate(value).map_entry((k,v) => `${k}: ${v}`)
+            let t = operate(value).map_entry((k,v) => `${k}: ${v}`).collect()
             e.style = t.join('; ')
         } else if (name == 'dataset') {
             require_type(value, 'HashTable')
@@ -82,11 +81,11 @@
                 if (name == 'enter') {
                     e['onkeyup'] = ev => {
                         if (ev.key == 'Enter' || ev.keyCode==13) {
-                            value[name](ev, data)
+                            value[name](ev, refs)
                         }
                     }
                 } else {
-                    let handler = ev => value[name](ev, data)
+                    let handler = ev => value[name](ev, refs)
                     e[`on${name}`] = handler
                 }
             }
@@ -208,6 +207,15 @@
                 f(key, this.operand[key])
             }
             return null
+        }
+        map_entry (f) {
+            assert(this.is('HashTable'))
+            let op = this.operand
+            return operate((function* () {
+                for (let key of Object.keys(op)) {
+                    yield f(key, op[key])
+                }
+            })())
         }
         keys () {
             assert(this.is('HashTable'))
@@ -395,18 +403,13 @@
                 return keys.every(key => hash[key] === another[key])
             }
         }
-        ui () {
-            let element = this.operand[Element]
-            assert(element instanceof HTMLElement)
-            return element
-        }
         $ (selector) {
-            let element = this.operand[Element] || this.operand
+            let element = this.operand
             assert(element instanceof HTMLElement)
             return element.querySelector(selector)            
         }
         $$ (selector) {
-            let element = this.operand[Element] || this.operand
+            let element = this.operand
             assert(element instanceof HTMLElement)
             return Array.from(element.querySelectorAll(selector))
         }
@@ -467,6 +470,7 @@
         bind (data, parameters) {
             require_type(data, 'HashTable')
             let update = operate(data).map_value(_ => [])
+            let refs = {}
             function create_element (parameters) {
                 require_type(parameters, 'Array')
                 let [tag, props, children] = parameters
@@ -479,11 +483,16 @@
                 let e = document.createElement(tag)
                 for (let name of Object.keys(props)) {
                     let value = props[name]
+                    if (name == 'ref') {
+                        require_type(value, 'String')
+                        refs[value] = e
+                        continue
+                    }
                     if (typeof value == 'function') {
                         let deps = extract_parameters(value)
                         let do_update = () => {
                             let args = deps.map(d => data[d])
-                            set_prop(e, name, value.apply(null, args))
+                            set_prop(e, refs, name, value.apply(null, args))
                         }
                         for (let dep of deps) {
                             assert(has_key(data, dep))
@@ -491,7 +500,7 @@
                         }
                         do_update()
                     } else {
-                        set_prop(e, name, value)
+                        set_prop(e, refs, name, value)
                     }
                 }
                 if (typeof children == 'function') {
@@ -544,9 +553,11 @@
             if (!data[Watchers]) {
                 data[Watchers] = []
             }
-            data[Watchers].push(update)
-            data[Element] = element
-            element[DataBinding] = { data, watcher: update }
+            if (data[Watchers].indexOf(update) == -1) {
+                data[Watchers].push(update)
+            }
+            Object.freeze(refs)
+            element[DataBinding] = { data, watcher: update }            
             return element
         },
         unbind (element) {

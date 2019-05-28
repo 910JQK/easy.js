@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Todo List</title>
+    <script src="../easy.js"></script>
+    <script src="todo.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+    <style>
+      .content { max-width: 500px; }
+      .panel > * { width: 100%; }
+      .list { list-style: none; padding: 0px; }
+      .item { display: flex; flex-direction: row; }
+      .item { justify-content: space-between; align-items: center; }
+      .item > :not(:last-child) { margin-right: 1rem; }
+      .item-content { box-sizing: border-box; height: 2rem; }
+      .item-content { flex-grow: 1; overflow: hidden; }
+      .item-content { display: flex; align-items: center; }
+      .item-content > input { width: 100%; height: 100%; }
+      .item-content > div { white-space: nowrap; text-overflow: ellipsis; }
+      .item-content > div { word-wrap: break-word; overflow: hidden; }
+      .edit-button { width: 5rem; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
