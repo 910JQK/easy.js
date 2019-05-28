@@ -2,12 +2,15 @@
 
 
 (function () {
+
     
     const ExportName = '__'
     const DataBinding = Symbol('DataBinding')
     const Storage = Symbol('Storage')
     const Watchers = Symbol('Watchers')
+    const Element = Symbol('Element')
 
+    
     function assert (value) {
         if (!value) {
             throw new Error('Assertion Failed')
@@ -22,29 +25,110 @@
     function not_empty (x) {
         return !is_empty(x)
     }
-
+    
     function is_real_object (x) {
         return typeof x == 'object' && x !== null
     }
-
+    
     function is_of_proto (object, proto) {
         return Object.getPrototypeOf(object) === proto
     }
-
+    
     function is_iterable (object) {
         return typeof object[Symbol.iterator] == 'function'
     }
-
+    
     function has_key (object, key) {
         return Object.prototype.hasOwnProperty.call(object, key)
     }
 
-    function extract_parameters (arrow_function) {
-        let code = arrow_function.toString()
-        let match = code.match(/^\(?([^)>]*)\)?=>/)
+    
+    function extract_parameters (f) {
+        let code = f.toString()
+        let match = code.match(/^function *\(([^\)]*)\)/)
+        if (match == null) {
+            match = code.match(/^\(?([^)>]*)\)?=>/)
+        }
         assert(match != null)
-        return match[1].split(',').map(p => p.trim())
+        if (match[1].trim() == '') {
+            return []
+        } else {
+            return match[1].split(',').map(p => p.trim())
+        }
     }
+
+    function set_prop (e, name, value) {
+        if (name == 'class') {
+            require_type(value, 'Array')
+            e.className = value.join(' ')
+        } else if (name == 'style') {
+            require_type(value, 'HashTable')
+            let t = operate(value).map_entry((k,v) => `${k}: ${v}`)
+            e.style = t.join('; ')
+        } else if (name == 'dataset') {
+            require_type(value, 'HashTable')
+            for (let k in e.dataset) {
+                if (!has_key(value, k)) {
+                    delete e.dataset[k]
+                }
+            }
+            for (let k of Object.keys(value)) {
+                e.dataset[k] = value[k]
+            }
+        } else if (name == 'on') {
+            require_type(value, 'HashTable')
+            for (let name of Object.keys(value)) {
+                require_type(value[name], 'Function')
+                if (name == 'enter') {
+                    e['onkeyup'] = ev => {
+                        if (ev.key == 'Enter' || ev.keyCode==13) {
+                            value[name](ev, data)
+                        }
+                    }
+                } else {
+                    let handler = ev => value[name](ev, data)
+                    e[`on${name}`] = handler
+                }
+            }
+        } else if (name == 'show') {
+            require_type(value, 'Boolean')
+            e.style.display = value? '': 'none'
+        } else if (name == 'text') {
+            e.textContent = value
+        } else {
+            e[name] = value
+        }
+    }
+    
+    function set_children (e, new_children, create_element) {
+        require_type(new_children, 'Array')
+        new_children = new_children.map(child => {
+            if (check_type(child, 'Array')) {
+                return create_element(child)
+            } else {
+                return child
+            }
+        })
+        let old_children = e.children
+        let old_length = e.children.length                    
+        let new_length = new_children.length
+        for (let i = 0; i < old_length; i += 1) {
+            if (old_children[i][DataBinding]) {
+                operate.unbind(old_children[i])
+            }
+            if (i < new_length) {
+                e.replaceChild(new_children[i], old_children[i])
+            } else {
+                e.removeChild(old_children[i])
+            }
+        }
+        if (new_length > old_length) {
+            for (let i=old_length; i < new_length; i += 1) {
+                e.appendChild(new_children[i])
+            }
+        }
+    }            
+
 
     let Types = {
         Boolean: x => typeof x == 'boolean',
@@ -74,10 +158,11 @@
         assert(check_type(x, type_name))
     }
 
+    
     function operate (object) {
         return new Handle(object)
     }
-
+    
     class Handle {
         constructor (operand) {
             this.operand = operand
@@ -310,8 +395,24 @@
                 return keys.every(key => hash[key] === another[key])
             }
         }
+        ui () {
+            let element = this.operand[Element]
+            assert(element instanceof HTMLElement)
+            return element
+        }
+        $ (selector) {
+            let element = this.operand[Element] || this.operand
+            assert(element instanceof HTMLElement)
+            return element.querySelector(selector)            
+        }
+        $$ (selector) {
+            let element = this.operand[Element] || this.operand
+            assert(element instanceof HTMLElement)
+            return Array.from(element.querySelectorAll(selector))
+        }
     }
 
+    
     let static_tools = {
         assert (value) {
             return assert(value)
@@ -357,6 +458,12 @@
                 }
             })())
         },
+        $ (selector) {
+            return document.querySelector(selector)
+        },
+        $$ (selector) {
+            return Array.from(document.querySelectorAll(selector))
+        },
         bind (data, parameters) {
             require_type(data, 'HashTable')
             let update = operate(data).map_value(_ => [])
@@ -366,108 +473,51 @@
                 require_type(tag, 'String')
                 require_type(props, 'HashTable')
                 children = children || []
-                assert(check_type(children, 'Array')
-                       || check_type(children, 'Function'))
+                let is_arr = check_type(children, 'Array')
+                let is_fun = check_type(children, 'Function')
+                assert(is_arr || is_fun)
                 let e = document.createElement(tag)
-                function set_prop (name, value) {
-                    if (name == 'class') {
-                        require_type(value, 'Array')
-                        e.className = value.join(' ')
-                    } else if (name == 'style') {
-                        require_type(value, 'HashTable')
-                        let t = operate(value).map_entry((k,v) => `${k}: ${v}`)
-                        e.style = t.join('; ')
-                    } else if (name == 'dataset') {
-                        require_type(value, 'HashTable')
-                        for (let k in e.dataset) {
-                            if (!has_key(value, k)) {
-                                delete e.dataset[k]
-                            }
-                        }
-                        for (let k of Object.keys(value)) {
-                            e.dataset[k] = value[k]
-                        }
-                    } else if (name == 'on') {
-                        require_type(value, 'HashTable')
-                        for (let name of Object.keys(value)) {
-                            require_type(value[name], 'Function')
-                            let handler = ev => value[name](ev, data)
-                            e[`on${name}`] = handler
-                        }
-                    } else if (name == 'text') {
-                        e.textContent = value
-                    } else {
-                        e[name] = value
-                    }
-                }
-                function set_children (new_children) {
-                    require_type(new_children, 'Array')
-                    new_children = new_children.map(child => {
-                        if (check_type(child, 'Array')) {
-                            return create_element(child)
-                        } else {
-                            return child
-                        }
-                    })
-                    let old_children = e.children
-                    let old_length = e.children.length                    
-                    let new_length = new_children.length
-                    for (let i = 0; i < old_length; i += 1) {
-                        if (old_children[i][DataBinding]) {
-                            static_tools.unbind(old_children[i])
-                        }
-                        if (i < new_length) {
-                            e.replaceChild(new_children[i], old_children[i])
-                        } else {
-                            e.removeChild(old_children[i])
-                        }
-                    }
-                    if (new_length > old_length) {
-                        for (let i=old_length; i < new_length; i += 1) {
-                            e.appendChild(new_children[i])
-                        }
-                    }
-                }
                 for (let name of Object.keys(props)) {
                     let value = props[name]
                     if (typeof value == 'function') {
                         let deps = extract_parameters(value)
+                        let do_update = () => {
+                            let args = deps.map(d => data[d])
+                            set_prop(e, name, value.apply(null, args))
+                        }
                         for (let dep of deps) {
                             assert(has_key(data, dep))
-                            let do_update = () => {
-                                let args = deps.map(d => data[d])
-                                set_prop(name, value.apply(null, args))
-                            }
                             update[dep].push(do_update)
-                            do_update()
                         }
+                        do_update()
                     } else {
-                        set_prop(name, value)
+                        set_prop(e, name, value)
                     }
                 }
                 if (typeof children == 'function') {
                     let deps = extract_parameters(children)
+                    let do_update = () => {
+                        let args = deps.map(d => data[d])
+                        let computed = children.apply(null, args)
+                        set_children(e, computed, create_element)
+                    }
                     for (let dep of deps) {
                         assert(has_key(data, dep))
-                        let do_update = () => {
-                            let args = deps.map(d => data[d])
-                            set_children(children.apply(null, args))
-                        }
                         update[dep].push(do_update)
-                        do_update()
                     }
+                    do_update()
                 } else {
-                    set_children(children)
+                    set_children(e, children, create_element)
                 }
                 return e
             }
-            let element = create_element(parameters)
             function set_reactive (data, key) {
                 if (!data[Storage]) {
                     data[Storage] = {}
                 }
                 data[Storage][key] = data[key]
                 Object.defineProperty(data, key, {
+                    configurable: true, enumerable: true,
                     get: function () {
                         return data[Storage][key]
                     },
@@ -482,6 +532,7 @@
                     }
                 })
             }
+            let element = create_element(parameters)
             for (let key of Object.keys(update)) {
                 if (update[key].length > 0) {
                     let d = Object.getOwnPropertyDescriptor(data, key)
@@ -494,6 +545,7 @@
                 data[Watchers] = []
             }
             data[Watchers].push(update)
+            data[Element] = element
             element[DataBinding] = { data, watcher: update }
             return element
         },
@@ -506,13 +558,15 @@
             data[Watchers].splice(i, 1)
         }
     }
-
+    
     Object.assign(operate, static_tools)
 
+    
     if (typeof window != 'undefined') {
         window[ExportName] = operate
     } else {
         module.exports = operate
     }
+
     
 })()

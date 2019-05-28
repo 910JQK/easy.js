@@ -1,3 +1,3 @@
-.item > :first-child {
+.item > :not(:last-child) {
     margin-right: 1rem;
 }

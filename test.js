@@ -9,7 +9,10 @@ let data = {
     input: '',
     add_input () {
         if (this.input) {
-            this.list = __(this.list).appended(this.input)
+            this.list = __(this.list).appended({
+                content: this.input,
+                editing: false
+            })
             this.input = ''
         }
     },
@@ -20,39 +23,56 @@ let data = {
 
 
 let List = ['div', { class: ['list-wrapper'] }, [
-    ['ul', { class: ['list'] }, list => list.map((item, index) => [
+    ['ul', { class: ['list'] }, list => list.map((item, i) => __.bind(item, [
         'li', { class: ['item'] }, [
-            ['span', { text: item }],
-            ['a', { href: BTN_HREF, text: 'Remove', on: {
-                click: (ev, data) => { data.remove(index) }
-            }}]
+            ['span', {
+                class: ['item-content'],
+                show: editing => !editing,                
+                text: content => content
+            }],
+            ['input', {
+                class: ['item-content', 'item-input'],
+                show: editing => editing,
+                type: 'text',
+                value: content => content,
+                on: {
+                    input: event => { item.content = event.target.value },
+                    enter: event => { item.editing = false }
+                }
+            }],
+            ['a', {
+                href: BTN_HREF,
+                text: editing => editing? 'Save': 'Edit',
+                on: { click: event => {
+                    item.editing = !item.editing
+                    if (item.editing) { __(item).$('.item-input').focus() }
+                }}
+            }],
+            ['a', {
+                href: BTN_HREF,
+                text: 'Remove',
+                on: { click: event => { data.remove(i) } }
+            }]
         ]
-    ])]
+    ]))]
 ]]
 
 
 let Panel = ['div', { class: ['panel'] }, [
     ['input', {
+        type: 'text',
         placeholder: 'What do you plan to do?',
         value: input => input,
         on: {
-            input: (ev, data) => {
-                data.input = ev.target.value
-            },
-            keyup: (ev, data) => {
-                if (ev.key == 'Enter') {
-                    data.add_input()
-                }
-            }
+            input: event => { data.input = event.target.value },
+            enter: event => { data.add_input() }
         }
     }],
     ['button', {
         text: 'Add',
         disabled: input => input == '',
         on: {
-            click: (ev, data) => {
-                data.add_input()
-            }
+            click: ev => { data.add_input() }
         }
     }]
 ]]
