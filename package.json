@@ -1,14 +1,19 @@
 {
-  "name": "easy.js",
-  "version": "0.0.1",
-  "description": "An utility library for web development.",
-  "main": "easy.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "utility"
-  ],
-  "author": "910JQK",
-  "license": "MIT"
+    "name": "so-so-easy",
+    "version": "0.0.1",
+    "description": "An utility library for web development implemented by vanilla ES6 without any dependency.",
+    "module": "easy.js",
+    "scripts": {
+        "build": "webpack"
+    },
+    "keywords": [
+        "utility"
+    ],   
+    "author": "910JQK",
+    "repository": "github:910JQK/so-so-easy.js",
+    "license": "MIT",
+    "devDependencies": {
+        "webpack": "^4.32.2",
+        "webpack-cli": "^3.3.2"
+    }
 }
