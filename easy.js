@@ -298,6 +298,7 @@ class Handle {
             value = f(item, value, i)
             i += 1
         }
+        return value
     }
     find (f) {
         assert(this.is('Iterable'))
