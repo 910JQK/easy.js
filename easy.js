@@ -369,15 +369,17 @@ class Handle {
     every (f) {
         assert(this.is('Iterable'))
         require_type(f, 'Function')
+        let i = 0
         for (let item of this.operand) {
-            if (!f(item)) {
+            if (!f(item, i)) {
                 return false
             }
+            i += 1
         }
         return true
     }
     some (f) {
-        return !this.every(item => !f(item))
+        return !this.every((item, i) => !f(item, i))
     }
     reduce (initial, f) {
         assert(this.is('Iterable'))
