@@ -312,23 +312,27 @@ sum(__.range(0, 101).unwrap())
 
 ### Handle&lt;Iterable&gt; :: every (f: Function) -> Boolean
 
-Checks if for all elements yielded by the operand, `f(element)` is a truthy value.
+Checks if for all elements yielded by the operand, `f(element, index)` is a truthy value.
 
 ```js
 __([ 1, 2, 3 ]).every(n => __(n).is('Number'))
 // true
 __([ 1, '2', 3 ]).every(n => __(n).is('Number'))
 // false
+__([ 6, 11, 88 ]).every((n, i) => i == 0 || n > 10)
+// true
 ```
 
 ### Handle&lt;Iterable&gt; :: some (f: Function) -> Boolean
 
-Checks if there exists an element yielded by the operand that satisfies that `f(element)` is a truthy value.
+Checks if there exists an element yielded by the operand that satisfies that `f(element, index)` is a truthy value.
 
 ```js
 __([ 1, '2', 3 ]).some(n => __(n).is('String'))
 // true
 __([ 1, 2, 3 ]).some(n => __(n).is('String'))
+// false
+__([ 6, 11, 88 ]).some((n, i) => i > 0 && n < 10)
 // false
 ```
 
@@ -384,6 +388,95 @@ __([ 5, 7, 9 ]).reversed()
 // Handle { operand: Generator }
 __([ 5, 7, 9 ]).reversed().collect()
 // Array(3) [ 9, 7, 5 ]
+```
+
+### Handle&lt;Array&gt; :: prepended (element: any) -> Array
+
+Creates a copy of the operand array with `element` prepended, and returns the new array.
+
+```js
+let l = [ 1, 2, 3 ]
+let m = __(l).prepended(0)
+l  // Array(3) [ 1, 2, 3 ]
+m  // Array(4) [ 0, 1, 2, 3 ]
+```
+
+### Handle&lt;Array&gt; :: appended (element: any) -> Array
+
+Creates a copy of the operand array with `element` appended, and returns the new array.
+
+```js
+let l = [ 1, 2, 3 ]
+let m = __(l).appended(4)
+l  // Array(3) [ 1, 2, 3 ]
+m  // Array(4) [ 1, 2, 3, 4 ]
+```
+
+### Handle&lt;Array&gt; :: removed (index: Number) -> Array
+
+Creates a copy of the operand array with element at `index` removed, and returns the new array. Note that `index` should be a valid index of the operand array, otherwise the method will throw an error.
+
+```js
+__([ 0, 1, 2, 3, 4 ]).removed(2)
+// Array(4) [ 0, 1, 3, 4 ]
+__([ 0, 1, 2, 3, 4]).removed(5)
+// Error: Assertion Failed
+```
+
+### Handle&lt;Array&gt; :: copy () -> Array 
+### Handle&lt;HashTable&gt; :: copy() -> HashTable
+
+Creates a shallow copy of the operand and returns the copy.
+
+```js
+let a1 = [ 0, 1 ]
+let a2 = __(a1).copy()
+a1[0] = 777
+a1  // Array(2) [ 777, 1 ]
+a2  // Array(2) [ 0, 1 ]
+let h1 = { a: 1, b: 2 }
+let h2 = __(h1).copy()
+h2.b *= 500
+h1  // Object { a: 1, b: 2 }
+h2  // Object { a: 1, b: 1000 }
+```
+
+### Handle&lt;Array&gt; :: equals (another: Array) -> Array 
+### Handle&lt;HashTable&gt; :: equals (another: HashTable) -> HashTable 
+
+Checks the shallow equality of the operand and the argument `another`. (each element or value is checked by `===` operator)
+
+```js
+__([ 1, 2, 3 ]).equals([ 1, 2, 3 ])
+// true
+__([ '1', 2, 3 ]).equals([ 1, 2, 3 ])
+// false
+__([ 1, 2, {} ]).equals([ 1, 2, {} ])
+// false
+__({ a: 1, b: 2 }).equals({ a: 1, b: 2 })
+// true
+__({ a: 1, b: [2] }).equals({ a: 1, b: [2] })
+// false
+```
+
+### Handle&lt;HTMLElement&gt; :: $ (selector: String) -> HTMLElement | Null
+
+Equivalent to `operand.querySelector(selector)`.
+
+```js
+__(document.head).$('meta')
+// <meta charset="UTF-8">
+```
+
+### Handle&lt;HTMLElement&gt; :: $ (selector: String) -> Array&lt;HTMLElement&gt;
+
+Invokes `operand.querySelectorAll(selector)`, returns an array created from the result NodeList.
+
+```js
+__(document.head).$$('script')
+// Array(2) [script, script]
+__(document.head).$$('vrgwegvergvqe')
+// Array(0) []
 ```
 
 ### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
