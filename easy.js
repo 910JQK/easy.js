@@ -151,7 +151,7 @@ function check_type (x, type_name) {
 }
 
 function require_type (x, type_name) {
-    assert(check_type(x, type_name))
+    return assert(check_type(x, type_name))
 }
 
 
@@ -252,6 +252,7 @@ class Handle {
                 result[key] = value
             }
         }
+        return result
     }
     map (f) {
         assert(this.is('Iterable'))
