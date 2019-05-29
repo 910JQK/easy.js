@@ -1,7 +1,7 @@
 'use strict';
 
 
-const ExportName = '__'
+// const ExportName = '__'
 const DataBinding = Symbol('DataBinding')
 const Storage = Symbol('Storage')
 const Watchers = Symbol('Watchers')
@@ -191,11 +191,7 @@ class Handle {
     entries () {
         assert(this.is('HashTable'))
         let op = this.operand
-        return operate((function* () {
-            for (let key of Object.keys(op)) {
-                yield { key: key, value: op[key] }
-            }
-        })())
+        return Object.keys(op).map(key => ({ key, value: op[key] }))
     }
     for_each_entry (f) {
         assert(this.is('HashTable'))
