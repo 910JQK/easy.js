@@ -175,7 +175,7 @@ __(Object.create({})).has('1')  // Error: Assertion Failed
 
 ### Handle&lt;HashTable&gt; :: merge (hash: HashTable) -> HashTable
 
-Invokes `Object.assign(operand, hash)` to merge `hash` into the operand and return the operand itself.
+Invokes `Object.assign(operand, hash)` to merge `hash` into the operand and returns the operand itself.
 
 ```js
 let h = { a: 1, b: 2 }
@@ -185,7 +185,7 @@ h  // Object { a: 1, b: 2, c: 3 }
 
 ### Handle&lt;HashTable&gt; :: merged (hash: HashTable) -> HashTable
 
-Invokes `Object.assign({}, operand, hash)` to merge `hash` and the operand into a new object and return the new object.
+Invokes `Object.assign({}, operand, hash)` to merge `hash` and the operand into a new object and returns the new object.
 
 ```js
 let h1 = { a: 1, b: 2 }
@@ -233,7 +233,7 @@ __({ a: 1, b: 2 }).for_each_entry((key, value) => { console.log(`${key} = ${valu
 
 ### Handle&lt;HashTable&gt; :: map_entry (f: Function) -> Handle&lt;Iterable&gt;
 
-Creates an iterator that yields `f(key, value)` for each entry of the operand, and return a handle of the iterator.
+Creates an iterator that yields `f(key, value)` for each entry of the operand, and returns a handle of the iterator.
 
 ```js
 __({ a: 1, b: 2 }).map_entry((key, value) => `${key} = ${value}`)
@@ -244,7 +244,7 @@ __({ a: 1, b: 2 }).map_entry((key, value) => `${key} = ${value}`).collect()
 
 ### Handle&lt;HashTable&gt; :: map_key (f: Function) -> HashTable
 
-Creates a new hash table with keys mapped by `f(key, value)` for each entry of the operand, and return the new hash table.
+Creates a new hash table with keys mapped by `f(key, value)` for each entry of the operand, and returns the new hash table.
 
 ```js
 __({ a: 1, b: 2 }).map_key(k => k.toUpperCase())
@@ -255,7 +255,7 @@ __({ a: 1, b: 2 }).map_key((_, v) => v.toString())
 
 ### Handle&lt;HashTable&gt; :: map_value (f: Function) -> HashTable
 
-Creates a new hash table with values mapped by `f(value, key)` for each entry of the operand, and return the new hash table.
+Creates a new hash table with values mapped by `f(value, key)` for each entry of the operand, and returns the new hash table.
 
 ```js
 __({ a: 1, b: 2 }).map_value(v => v*1000)
@@ -266,7 +266,7 @@ __({ a: 1, b: 2 }).map_value((v, k) => v*1000 + k.codePointAt(0))
 
 ### Handle&lt;HashTable&gt; :: filter_entry (f: Function) -> HashTable
 
-Creates a new hash table with entries filtered by `f(key, value)` for each entry of the operand, and return the new hash table.
+Creates a new hash table with entries filtered by `f(key, value)` for each entry of the operand, and returns the new hash table.
 
 ```js
 __({ a: 1, b: 2, c: 3 }).filter_entry((k, v) => k != 'a' && v != 3)
@@ -275,7 +275,7 @@ __({ a: 1, b: 2, c: 3 }).filter_entry((k, v) => k != 'a' && v != 3)
 
 ### Handle&lt;Iterable&gt; :: map (f: Function) -> Handle&lt;Iterable&gt;
 
-Create a new iterator with elements mapped by `f(element, index)` for each element yielded by the operand, and return a handle of the new iterator.
+Create a new iterator with elements mapped by `f(element, index)` for each element yielded by the operand, and returns a handle of the new iterator.
 
 ```js
 __([ 1, 2, 3, 4, 5 ]).map(n => 2**n)
@@ -290,7 +290,7 @@ __({ a: 1, b: 2 }).map((_, i) => i).collect()
 
 ### Handle&lt;Iterable&gt; :: filter (f: Function) -> Handle&lt;Iterable&gt;
 
-Create a new iterator with elements filtered by `f(element, index)` for each element yielded by the operand, and return a handle of the new iterator.
+Create a new iterator with elements filtered by `f(element, index)` for each element yielded by the operand, and returns a handle of the new iterator.
 
 ```js
 __([ 1, 2, 3, 4, 5 ]).filter(n => n > 3).collect()
@@ -314,4 +314,31 @@ sum(__.range(0, 101).unwrap())
 
 Checks if for all elements yielded by the operand, `f(element)` is a truthy value.
 
-# DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
+```js
+__([ 1, 2, 3 ]).every(n => __(n).is('Number'))
+// true
+__([ 1, '2', 3 ]).every(n => __(n).is('Number'))
+// false
+```
+
+### Handle&lt;Iterable&gt; :: some (f: Function) -> Boolean
+
+Checks if there exists an element yielded by the operand that satisfies that `f(element)` is a truthy value.
+
+```js
+__([ 1, '2', 3 ]).some(n => __(n).is('String'))
+// true
+__([ 1, 2, 3 ]).some(n => __(n).is('String'))
+// false
+```
+
+### Handle&lt;Iterable&gt; :: find (f: Function) -> any
+
+Finds the first element which satisfies that `f(element)` is a truthy value, in all elements yielded by the operand, and returns it. If all the elements do not satisfy the condition, `null` will be returned.
+
+### Handle&lt;Iterable&gt; :: for_each_item (f: Function) -> Null
+
+Invokes `f(element)` for each element yielded by the operand.
+
+
+### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED

@@ -405,8 +405,10 @@ class Handle {
     for_each_item (f) {
         assert(this.is('Iterable'))
         require_type(f, 'Function')
+        let i = 0
         for (let item of this.operand) {
-            f(item)
+            f(item, i)
+            i += 1
         }
         return null
     }
