@@ -336,9 +336,54 @@ __([ 1, 2, 3 ]).some(n => __(n).is('String'))
 
 Finds the first element which satisfies that `f(element)` is a truthy value, in all elements yielded by the operand, and returns it. If all the elements do not satisfy the condition, `null` will be returned.
 
+```js
+__([{ x: 1, y: 2 }, { x: -1, y: 3 }]).find(p => p.x < 0)
+// Object {x: -1, y: 3}
+__([{ x: 1, y: 2 }, { x: -1, y: 3 }]).find(p => p.y < 0)
+// null
+```
+
 ### Handle&lt;Iterable&gt; :: for_each_item (f: Function) -> Null
 
-Invokes `f(element)` for each element yielded by the operand.
+Invokes `f(element, index)` for each element yielded by the operand.
 
+```js
+__.range(10, 15).for_each_item((e, i) => { console.log(`#${i}: ${e}`) })
+/*
+#1: 11
+#2: 12
+#3: 13
+#4: 14
+*/
+```
+
+### Handle&lt;Iterable&gt; :: join (separator: String) -> String
+
+Behaves like `Array.prototype.join(separator)` but operates on the iterable operand, which does not have to be an array.
+
+```js
+__.range(0,10).map(n => 2**n).join('-')
+// "1-2-4-8-16-32-64-128-256-512"
+```
+
+### Handle&lt;Iterable&gt; :: collect () -> Array
+
+Collects all elements yielded by the operand into an array, and returns the array.
+
+```js
+__((function*() { yield 1; yield 2 })()).collect()
+// Array(2) [ 1, 2 ]
+```
+
+### Handle&lt;Array&gt; :: reversed () -> Handle&lt;Iterable&gt;
+
+Creates a reversed iterator of the operand array, and returns a handle of the iterator.
+
+```js
+__([ 5, 7, 9 ]).reversed()
+// Handle { operand: Generator }
+__([ 5, 7, 9 ]).reversed().collect()
+// Array(3) [ 9, 7, 5 ]
+```
 
 ### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
