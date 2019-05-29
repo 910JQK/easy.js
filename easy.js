@@ -123,7 +123,97 @@ function set_children (e, new_children, create_element) {
             e.appendChild(new_children[i])
         }
     }
-}            
+}
+
+
+function notify_update (object, key) {
+    if (!object[Watchers]) { return }
+    for (let watcher of object[Watchers]) {
+        if (!watcher[key]) { continue }
+        for (let do_update of watcher[key]) {
+            do_update()
+        }
+    }
+}
+
+
+function make_reactive (object, key) {
+    let d = Object.getOwnPropertyDescriptor(object, key)
+    if (d.set) { return }
+    if (!object[Storage]) {
+        object[Storage] = {}
+    }
+    object[Storage][key] = object[key]
+    Object.defineProperty(object, key, {
+        enumerable: true,
+        get: function () {
+            return object[Storage][key]
+        },
+        set: function (value) {
+            object[Storage][key] = value
+            notify_update(object, key)
+        }
+    })
+}
+
+
+function define_computed (object, key, get) {
+    let deps = extract_parameters(get)
+    let compute = () => get.apply(null, deps.map(dep => object[dep]))
+    let cache = null
+    let cache_enabled = false
+    let do_update = () => {
+        cache = compute()
+        cache_enabled = true
+        notify_update(object, key)
+        cache_enabled = false
+        cache = null
+    }
+    let watcher = {}
+    for (let dep of deps) {
+        watcher[dep] = [do_update]
+    }
+    if (!object[Watchers]) { object[Watchers] = [] }
+    object[Watchers].push(watcher)
+    Object.defineProperty(object, key, {
+        enumerable: true,
+        get: function () {
+            if (cache_enabled) {
+                return cache
+            } else {
+                return compute()
+            }
+        },
+        set: function () {
+            throw Error('cannot set value of computed property')
+        }
+    })
+}
+
+
+function add_watcher (object, callback) {
+    let deps = extract_parameters(callback)
+    let do_update = () => callback.apply(null, deps.map(dep => object[dep]))
+    let watcher = {}
+    for (let dep of deps) {
+        watcher[dep] = [do_update]
+    }
+    if (!object[Watchers]) { object[Watchers] = [] }
+    object[Watchers].push(watcher)
+    return watcher
+}
+
+
+function remove_watcher (object, watcher) {
+    if (!object[Watchers]) { return false }
+    let i = object[Watchers].indexOf(watcher)
+    if (i != -1) {
+        object[Watchers].splice(i, 1)
+        return true
+    } else {
+        return false
+    }
+}
 
 
 let Types = {
@@ -408,6 +498,28 @@ class Handle {
         assert(element instanceof HTMLElement)
         return Array.from(element.querySelectorAll(selector))
     }
+    track (key) {
+        assert(this.is('Object'))
+        require_type(key, 'String')
+        assert(this.has(key))
+        make_reactive(this.operand, key)
+    }
+    define (key, get) {
+        assert(this.is('Object'))
+        require_type(key, 'String')
+        require_type(get, 'Function')
+        define_computed(this.operand, key, get)
+    }
+    watch (callback) {
+        assert(this.is('Object'))
+        require_type(callback, 'Function')
+        return add_watcher(this.operand, callback)
+    }
+    unwatch (watcher) {
+        assert(this.is('Object'))
+        require_type(watcher, 'Object')
+        return remove_watcher(this.operand, watcher)
+    }
 }
 
 
@@ -463,8 +575,8 @@ let static_tools = {
         return Array.from(document.querySelectorAll(selector))
     },
     bind (data, parameters) {
-        require_type(data, 'HashTable')
-        let update = operate(data).map_value(_ => [])
+        require_type(data, 'Object')
+        let update = {}
         let refs = {}
         function create_element (parameters) {
             require_type(parameters, 'Array')
@@ -491,6 +603,7 @@ let static_tools = {
                     }
                     for (let dep of deps) {
                         assert(has_key(data, dep))
+                        if (!update[dep]) { update[dep] = [] }
                         update[dep].push(do_update)
                     }
                     do_update()
@@ -507,6 +620,7 @@ let static_tools = {
                 }
                 for (let dep of deps) {
                     assert(has_key(data, dep))
+                    if (!update[dep]) { update[dep] = [] }
                     update[dep].push(do_update)
                 }
                 do_update()
@@ -515,39 +629,13 @@ let static_tools = {
             }
             return e
         }
-        function set_reactive (data, key) {
-            if (!data[Storage]) {
-                data[Storage] = {}
-            }
-            data[Storage][key] = data[key]
-            Object.defineProperty(data, key, {
-                configurable: true, enumerable: true,
-                get: function () {
-                    return data[Storage][key]
-                },
-                set: function (value) {
-                    data[Storage][key] = value
-                    for (let update of data[Watchers]) {
-                        if (!update[key]) { continue }
-                        for (let do_update of update[key]) {
-                            do_update()
-                        }
-                    }
-                }
-            })
-        }
         let element = create_element(parameters)
         for (let key of Object.keys(update)) {
-            if (update[key].length > 0) {
-                let d = Object.getOwnPropertyDescriptor(data, key)
-                if (!d.set) {
-                    set_reactive(data, key)
-                }
+            if (update[key]) {
+                make_reactive(data, key)
             }
         }
-        if (!data[Watchers]) {
-            data[Watchers] = []
-        }
+        if (!data[Watchers]) { data[Watchers] = [] }
         if (data[Watchers].indexOf(update) == -1) {
             data[Watchers].push(update)
         }
