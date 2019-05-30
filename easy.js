@@ -655,6 +655,7 @@ let static_tools = {
         let i = data[Watchers].indexOf(watcher)
         assert(i != -1)
         data[Watchers].splice(i, 1)
+        return null
     }
 }
 
