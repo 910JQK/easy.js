@@ -711,20 +711,20 @@ Just like a Prop with a functional value, the dependencies defined by the parame
 
 ```js
 let d = { list: [1, 2, 3]  }
-let e = __.bind(d, ['ul', {}, list => list.map(i => ['div', { text: `${i}` }])])
+let e = __.bind(d, ['ul', {}, list => list.map(i => ['li', { text: `${i}` }])])
 e
 // <ul>
-//   <div>1</div>
-//   <div>2</div>
-//   <div>3</div>
+//   <li>1</li>
+//   <li>2</li>
+//   <li>3</li>
 // </ul>
 d.list = __(d.list).appended(4)
 e
 // <ul>
-//   <div>1</div>
-//   <div>2</div>
-//   <div>3</div>
-//   <div>4</div>
+//   <li>1</li>
+//   <li>2</li>
+//   <li>3</li>
+//   <li>4</li>
 // </ul>
 ```
 
