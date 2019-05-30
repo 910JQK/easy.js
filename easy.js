@@ -548,14 +548,12 @@ let static_tools = {
         args.forEach(arg => require_type(arg, 'Iterable'))
         let iterators = args.map(arg => arg[Symbol.iterator]())
         return operate((function* () {
-            let next = true
-            while (next) {
+            w: while (true) {
                 let item = []
                 for (let iterator of iterators) {
                     let t = iterator.next()
                     if (t.done) {
-                        next = false
-                        break
+                        break w
                     } else {
                         item.push(t.value)
                     }
