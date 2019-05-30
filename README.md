@@ -83,7 +83,7 @@ __(p).equals(p)  // true
 
 ```
 
-- **Reactive Data Binding on Actual DOM** &nbsp; Unlike libraries designed for big apps, which tend to use virtual DOM, this library provides a way to bind data on actual DOM, and update DOM content reactively. Unlike other libraries, this library does not use templates. It provides a simple way to describe DOM structure and data binding by vanilla JS, so it does not contain a template parser, which makes it very small.
+- **Reactive Data Binding on Actual DOM** &nbsp; Unlike libraries designed for big apps, which tend to use virtual DOM, this library provides a way to bind data on actual DOM, and update DOM content reactively. Unlike other libraries, this library does not use templates. It provides a simple way to describe DOM structure and data binding by vanilla JS, so it does not contain a template parser, which makes it very lightweight.
 
 ```js
 let Data = { count: 0 }
@@ -125,7 +125,7 @@ __(12345)
 
 Returns the wrapped operand of the handle.
 
-```
+```js
 __(12345).unwrap()
 // 12345
 ```
@@ -134,7 +134,7 @@ __(12345).unwrap()
 
 Checks if the operand of the handle is of the type indicated by `type_name`.
 
-```
+```js
 __([1,2,3]).is('Array')  // true
 __({}).is('HashTable')  // true
 __(t=>t+1).is('Function') // true
@@ -162,7 +162,7 @@ __(null).is('Object')  // false
 | Empty     | `typeof operand == 'undefined'`                  |
 | NotEmpty  | `typeof operand != 'undefined'`                  |
 
-### Handle&lt;HashTable&gt; :: has (key: Key) -> Boolean
+### Handle&lt;HashTable&gt; :: has (key: String) -> Boolean
 
 Invokes `Object.prototype.hasOwnProperty` to check if `key` is an own-property of the operand.
 
@@ -408,8 +408,8 @@ Creates a copy of the operand array with `element` appended, and returns the new
 ```js
 let l = [ 1, 2, 3 ]
 let m = __(l).appended(4)
-l  // Array(3) [ 1, 2, 3 ]
-m  // Array(4) [ 1, 2, 3, 4 ]
+l  // Array(3) [ 1, 2, 3 ]
+m  // Array(4) [ 1, 2, 3, 4 ]
 ```
 
 ### Handle&lt;Array&gt; :: removed (index: Number) -> Array
@@ -432,8 +432,8 @@ Creates a shallow copy of the operand and returns the copy.
 let a1 = [ 0, 1 ]
 let a2 = __(a1).copy()
 a1[0] = 777
-a1  // Array(2) [ 777, 1 ]
-a2  // Array(2) [ 0, 1 ]
+a1  // Array(2) [ 777, 1 ]
+a2  // Array(2) [ 0, 1 ]
 let h1 = { a: 1, b: 2 }
 let h2 = __(h1).copy()
 h2.b *= 500
@@ -474,9 +474,94 @@ Invokes `operand.querySelectorAll(selector)`, returns an array created from the 
 
 ```js
 __(document.head).$$('script')
-// Array(2) [script, script]
+// Array(2) [script, script]
 __(document.head).$$('vrgwegvergvqe')
 // Array(0) []
 ```
+
+### Handle&lt;Object&gt; :: track (key: String) -> Null
+
+Makes `operand[key]` a reactive property, that is, when the value of `operand[key]` changes, the watchers of the `key` will be notified. If `operand[key]` is already a reactive property, does nothing. If `operand[key]` does not exist, throws an error.
+
+```js
+let o = { t: 0 }
+__(o).track('t')
+__(o).watch(t => { console.log(`The value of t changed to ${t}`) })
+o.t = 1
+// The value of t changed to 1
+o.t = 2
+// The value of t changed to 2
+__(o).track('cwn2390vnwriovn3i')
+// Error: Assertion Failed
+```
+
+### Handle&lt;Object&gt; :: define (key: String, get: Function) -> Null
+
+> Warning: Use of this method causes you **CANNOT** minify, uglify or obscure your JavaScript code. That is because the names of properties depended by the computed property is determined by the parameter list of the `get` function, this behaviour relies on the result of `Function.prototype.toString()`, which will break when the code is minified. Moreover, using default value for parameters, or putting comments between parameters of the `get` function, is **NOT** allowed.
+
+Defines `key` as a computed property on the operand, with parameters of the `get` function as its dependecies.
+
+```js
+let o = { u: 1, v: 2 }
+__(o).define('computed', (u, v) => u+v)
+o.computed  // 3
+o.u = -2
+o.computed  // 0
+__(o).track('u')
+__(o).track('v')
+__(o).watch(computed => { console.log(`The computed value changed to ${computed}`) })
+o.u = 5
+// The computed value changed to 7
+o.v = 5
+// The computed value changed to 10
+o.v = 100
+// The computed value changed to 105
+```
+
+### Handle&lt;Object&gt; :: watch (callback: Function) -> Watcher
+
+> Warning: Use of this method causes you **CANNOT** minify, uglify or obscure your JavaScript code. That is because the names of properties depended by the watcher is determined by the parameter list of the `callback` function, this behaviour relies on the result of `Function.prototype.toString()`, which will break when the code is minified. Moreover, using default value for parameters, or putting comments between parameters of the `callback` function, is **NOT** allowed.
+
+For each parameter of the `callback` function, when the value of the property having the same name as the parameter changes, the `callback` function will be called (only if the property is set reactive by `track()`, `define()`, or `__.bind()`), and returns a watcher object, which can be used when calling `unwatch()`.
+
+```js
+let o = { name: 'ABC' }
+__(o).watch(name => { console.log(`new name: ${name}`) })
+o.name = 'DEF'
+// Nothing Happended
+__(o).track('name')
+o.name = 'Foo'
+// new name: Foo
+o.name = 'Bar'
+// new name: Bar
+```
+
+### Handle&lt;Object&gt; :: unwatch (watcher: Watcher) -> Boolean
+
+If `watcher` exists on the operand object, remove it and returns `true`. Otherwise returns `false`.
+
+```js
+let o = { x: 3.5 }
+let w1 = __(o).watch(x => { console.log(`x = ${x}`) })
+let w2 = __(o).watch(x => { console.log(`2x = ${2*x}`) })
+__(o).track('x')
+o.x = 7
+// x = 7
+// 2x = 14
+o.x = 8
+// x = 8
+// 2x = 16
+__(o).unwatch(w1)
+// true
+__(o).unwatch(w1)
+// false
+o.x = 9
+// 2x = 18
+__(o).unwatch(w2)
+// true
+o.x = 10
+// Nothing Happended
+```
+
 
 ### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
