@@ -638,4 +638,108 @@ __.$$('vgwksbvke')
 // Array []
 ```
 
-### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
+### __.bind (data: Object, parameters: Array) -> HTMLElement
+
+> Warning: Use of this function causes you **CANNOT** minify, uglify or obscure your JavaScript code. That is because the names of properties of `data` that are depended by the create HTML element is determined by the parameter list of the functions defined in the `Props` or `Children` part of the array argument `parameters`, this behaviour relies on the result of `Function.prototype.toString()`, which will break when the code is minified. Moreover, using default value for function parameters, or putting comments between parameters of those functions, is **NOT** allowed.
+
+Creates a HTML element by the `parameters` and bind `data` on it. All the properties of `data` that are depended by the created HTML element will be set reactive.
+
+The schema of `parameters` is
+
+```
+Parameters := [TagName, Props, Children] or [TagName, Props]
+```
+
+`TagName` is a String, `Props` is a HashTable, and `Children` is an Array or a Function.
+
+#### Props
+
+`Props` is a HashTable, consists with some name-value pairs, for example:
+
+```js
+__.bind({}, ['div', { text: 'Text Content', style: { 'color': 'red', 'font-size': '20px' } }])
+// <div style="color: red; font-size: 20px;">Text Content</div>
+```
+
+The values may be functions:
+
+```js
+{ text: name => `Your name is ${name}` }
+{ class: enabled => [ enabled? 'enabled': 'disabled' ] }
+```
+
+If a functional value is set to a Prop, it behaves like `watch()`. When the dependencies defined by the parameters of the function are updated, the Prop will be updated successively.
+
+```js
+let d = { name: 'Alice' }
+let e = __.bind(d, ['div', { text: name => `Your name is ${name}` }])
+e  // <div>Your name is Alice</div>
+d.name = 'Bob'
+e  // <div>Your name is Bob</div>
+```
+
+The values for Props are treated according to the following schema table:
+
+| Prop Name | Value Schema                   | Behaviour                                                                                                                                                                               |
+|-----------|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| class     | ['c1', 'c2', 'c3', ...]        | `element.className = 'c1 c2 c3 ...'`                                                                                                                                                    |
+| style     | { 'name': 'value', ... }       | `element.style = 'name: value'`                                                                                                                                                         |
+| dataset   | { 'name': 'value', ... }       | Operates `element.dataset` to make it become desired value                                                                                                                              |
+| show      | (Boolean Value)                | `element.style.display = value? '': 'none'`                                                                                                                                             |
+| text      | (String Value)                 | `element.textContent = value`                                                                                                                                                           |
+| on        | { 'event_name': handler, ... } | `element['on'+'event_name'] = handler`                                                                                                                                                  |
+| on        | { 'enter': handler, ... }      | Binds `handler` to `keyup` event, emit the handler when the pressed key is Enter key.                                                                                                   |
+| ref       | (String Value)                 | Creates a reference on the element, just like `ref="..."` in `React` and `Vue`. The `refs` object will be passed as the second argument of each event handler defined in the `on` Prop. |
+| (others)  | value                          | `element[prop_name] = value`                                                                                                                                                            |
+
+#### Children
+
+`Children` may be an array of `Parameters` or `HTMLElement`, like this:
+
+```js
+[['li', { text: '1' }], ['li', { text: '2' }, ['li', { text: '3' }]]
+[document.createElement('div'), __.bind({}, ['div', { text: 'div2' }])]
+```
+
+And, it can also be a function, like this:
+
+```js
+items => items.map(item => ['li', { text: `${item}` }])
+```
+
+Just like a Prop with a functional value, the dependencies defined by the parameters of the function are updated, the Children will be updated successively. All the previous child elements will be removed from DOM (if the child has a data binding, `__.unbind()` will be called to cancel the data binding), and the new child elements will be added.
+
+```js
+let d = { list: [1, 2, 3]  }
+let e = __.bind(d, ['ul', {}, list => list.map(i => ['div', { text: `${i}` }])])
+e
+// <ul>
+//   <div>1</div>
+//   <div>2</div>
+//   <div>3</div>
+// </ul>
+d.list = __(d.list).appended(4)
+e
+// <ul>
+//   <div>1</div>
+//   <div>2</div>
+//   <div>3</div>
+//   <div>4</div>
+// </ul>
+```
+
+### __.unbind (element: HTMLElement) -> Null
+
+Cancels the data binding on the `element`. If there isn't a data binding on the `element`, throws an error.
+
+```js
+let d = { text: 'Text' }
+let e = __.bind(d, ['p', { text: text => text }])
+e.textContent  // "Text"
+d.text = 'New Text 1'
+e.textContent  // "New Text 1"
+__.unbind(e)
+d.text = 'New Text 2'
+e.textContent  // "New Text 1"
+__.unbind(e)  // Error: Assertion Failed
+```
