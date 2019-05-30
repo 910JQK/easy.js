@@ -8,7 +8,7 @@
 
 ### Yet Another JS Library, Why?
 
-Nowadays, Web Development is domainated by Webpack and Babel, which becomes overkill when developing small projects like Demo Programs and Online Utilities. So I created the small library. (very small)
+Nowadays, Web Development is domainated by Webpack and Babel, which becomes overkill when developing small projects like Demo Programs and Online Utilities. So I created the small library. It has some utility functions and some DOM operation functions. It is possible to use only one of those two parts.
 
 ## Overview
 
@@ -683,12 +683,12 @@ The values for Props are treated according to the following schema table:
 | Prop Name | Value Schema                   | Behaviour                                                                                                                                                                               |
 |-----------|--------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | class     | ['c1', 'c2', 'c3', ...]        | `element.className = 'c1 c2 c3 ...'`                                                                                                                                                    |
-| style     | { 'name': 'value', ... }       | `element.style = 'name: value'`                                                                                                                                                         |
-| dataset   | { 'name': 'value', ... }       | Operates `element.dataset` to make it become desired value                                                                                                                              |
+| style     | { 'name': 'value', ... }       | `element.style = 'name: value; ...'`                                                                                                                                                    |
+| dataset   | { 'name': 'value', ... }       | Mutates `element.dataset` to make it become the desired value                                                                                                                           |
 | show      | (Boolean Value)                | `element.style.display = value? '': 'none'`                                                                                                                                             |
 | text      | (String Value)                 | `element.textContent = value`                                                                                                                                                           |
-| on        | { 'event_name': handler, ... } | `element['on'+'event_name'] = handler`                                                                                                                                                  |
-| on        | { 'enter': handler, ... }      | Binds `handler` to `keyup` event, emit the handler when the pressed key is Enter key.                                                                                                   |
+| on        | { 'event_name': handler, ... } | `element['on'+'event_name'] = handler; ...`                                                                                                                                             |
+|           | { 'enter': handler, ... }      | Binds `handler` to `keyup` event, emit the handler when the pressed key is Enter key.                                                                                                   |
 | ref       | (String Value)                 | Creates a reference on the element, just like `ref="..."` in `React` and `Vue`. The `refs` object will be passed as the second argument of each event handler defined in the `on` Prop. |
 | (others)  | value                          | `element[prop_name] = value`                                                                                                                                                            |
 
