@@ -264,7 +264,7 @@ class Handle {
     }
     has (key) {
         assert(this.is('HashTable'))
-        require_type(key, 'Key')
+        require_type(key, 'String')
         return has_key(this.operand, key)
     }
     merge (hash) {
@@ -507,12 +507,14 @@ class Handle {
         require_type(key, 'String')
         assert(this.has(key))
         make_reactive(this.operand, key)
+        return null
     }
     define (key, get) {
         assert(this.is('Object'))
         require_type(key, 'String')
         require_type(get, 'Function')
         define_computed(this.operand, key, get)
+        return null
     }
     watch (callback) {
         assert(this.is('Object'))
