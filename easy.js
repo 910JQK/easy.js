@@ -43,7 +43,7 @@ function extract_parameters (f) {
     let code = f.toString()
     let match = code.match(/^function *\(([^\)]*)\)/)
     if (match == null) {
-        match = code.match(/^\(?([^)>]*)\)?=>/)
+        match = code.match(/^\(?([^\)>]*)\)? *=>/)
     }
     assert(match != null)
     if (match[1].trim() == '') {
