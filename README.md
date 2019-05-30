@@ -162,6 +162,17 @@ __(null).is('Object')  // false
 | Empty     | `typeof operand == 'undefined'`                  |
 | NotEmpty  | `typeof operand != 'undefined'`                  |
 
+### Handle :: require (type_name: String) -> Boolean
+
+Similar to `is()`, but throws an error if the type check failed.
+
+```js
+__('1').require('Number')
+// Error: Assertion Failed
+__(1).require('Number')
+// true
+```
+
 ### Handle&lt;HashTable&gt; :: has (key: String) -> Boolean
 
 Invokes `Object.prototype.hasOwnProperty` to check if `key` is an own-property of the operand.
