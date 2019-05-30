@@ -90,6 +90,7 @@ function set_prop (e, refs, name, value) {
         require_type(value, 'Boolean')
         e.style.display = value? '': 'none'
     } else if (name == 'text') {
+        require_type(value, 'String')
         e.textContent = value
     } else {
         e[name] = value
