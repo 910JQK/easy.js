@@ -479,7 +479,7 @@ __(document.head).$('meta')
 // <meta charset="UTF-8">
 ```
 
-### Handle&lt;HTMLElement&gt; :: $ (selector: String) -> Array&lt;HTMLElement&gt;
+### Handle&lt;HTMLElement&gt; :: $$ (selector: String) -> HTMLElement[]
 
 Invokes `operand.querySelectorAll(selector)`, returns an array created from the result NodeList.
 
@@ -487,7 +487,7 @@ Invokes `operand.querySelectorAll(selector)`, returns an array created from the 
 __(document.head).$$('script')
 // Array(2) [script, script]
 __(document.head).$$('vrgwegvergvqe')
-// Array(0) []
+// Array []
 ```
 
 ### Handle&lt;Object&gt; :: track (key: String) -> Null
@@ -574,5 +574,68 @@ o.x = 10
 // Nothing Happended
 ```
 
+### __.assert (value: any) -> Boolean
+
+If `value` is a truthy value, returns `true`, otherwise throws and error.
+
+```js
+__.assert('a'.toUpperCase() == 'A')
+// true
+__.assert('a'.toUpperCase() == 'B')
+// Error: Assertion Failed
+```
+
+### __.concat (...args: Iterable[]) -> Handle&lt;Iterable&gt;
+
+Concatenates all the arguments.
+
+```js
+__.concat([ 1, 2, 3 ], [ 4, 5, 6 ]).collect()
+// Array(6) [ 1, 2, 3, 4, 5, 6 ]
+__.concat(__.range(0, 5).unwrap(), [ 4, 3, 2 ]).map(n => n/10).collect()
+// Array(8) [ 0, 0.1, 0.2, 0.3, 0.4, 0.4, 0.3, 0.2 ]
+```
+
+### __.zip (...args: Iterable[]) -> Handle&lt;Iterable&gt;
+
+Converges all arguments.
+
+```js
+__.zip([1,2,3],['1','2','3'],['one','two','three']).collect()
+// Array(3) [ [ 1, "1", "one" ], [ 2, "2", "two" ], [ 3, "3", "three" ] ]
+```
+
+### __.range (start: Number, end: Number) -> Handle&lt;Iterable&gt;
+
+Similar to the `range()` function in Python.
+
+```js
+__.range(0, 10).collect()
+// Array(10) [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
+__.range(-10, 0).collect()
+// Array(10) [ -10, -9, -8, -7, -6, -5, -4, -3, -2, -1 ]
+```
+
+### __.$ (selector: String) -> HTMLElement | Null
+
+Invokes `document.querySelector(selector)`.
+
+```js
+__.$('body')
+// <body>
+__.$('rveirvne')
+// null
+```
+
+### __.$$ (selector: String) -> HTMLElement[]
+
+Invokes `document.querySelectorAll(selector)`, returns an array created from the result NodeList.
+
+```js
+__.$$('div')
+// Array(18) [ ... ]
+__.$$('vgwksbvke')
+// Array []
+```
 
 ### DOCUMENT CURRENTLY UNFINISHED, TO BE CONTINUED
